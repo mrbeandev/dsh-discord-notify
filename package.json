@@ -1,0 +1,85 @@
+{
+  "name": "dsh-discord-notify",
+  "version": "0.1.0",
+  "description": "One-way Discord webhook notifications for DeepSeek Harness agent turns, tool calls, and matching bash commands.",
+  "author": "mrbeandev and contributors",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./src/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "test",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/index.js && node --check src/client.js && npm test && npm pack --dry-run",
+    "prepublishOnly": "npm run check"
+  },
+  "dsh": {
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings-plugins"
+      ],
+      "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrbeandev/dsh-discord-notify.git"
+  },
+  "homepage": "https://github.com/mrbeandev/dsh-discord-notify#readme",
+  "bugs": {
+    "url": "https://github.com/mrbeandev/dsh-discord-notify/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "discord",
+    "webhook",
+    "notifications",
+    "plugin"
+  ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "safe-regex2": "^5.1.1"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "*",
+    "@deepseek-ai/dsh-settings": "*",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-ui-settings-plugins": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-settings": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-settings": "^0.1.5-rc.2",
+    "react": "^18.3.1"
+  }
+}

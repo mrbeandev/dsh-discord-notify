@@ -1,0 +1,5 @@
+# Install the Discord notification Host plugin into the selected DSH profile.
+- insert:
+    - id: discord-notify
+      name: 'dsh-discord-notify'
+      config: {}
