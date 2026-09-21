@@ -1,6 +1,6 @@
 {
   "name": "dsh-discord-notify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "One-way Discord webhook notifications for DeepSeek Harness agent turns, tool calls, and matching bash commands.",
   "author": "mrbeandev and contributors",
   "license": "MIT",

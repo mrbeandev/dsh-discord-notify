@@ -44,7 +44,7 @@ Installing a packed tarball is recommended for release testing:
 
 ```sh
 npm pack
-dsh plugin --profile web add ./dsh-discord-notify-0.1.0.tgz
+dsh plugin --profile web add ./dsh-discord-notify-0.1.1.tgz
 ```
 
 ## Configuration
@@ -53,8 +53,8 @@ The settings accordion exposes:
 
 | Setting | Default | Behavior |
 | --- | --- | --- |
-| Discord webhook URL | empty | Write-only Discord webhook secret; no notifications are sent until configured |
-| Webhook display name | `DeepSeek Harness` | Sender name shown in Discord |
+| Discord notification URL | empty | Write-only channel secret; no notifications are sent until configured |
+| Notification display name | `DeepSeek Harness` | Sender name shown in Discord |
 | Agent turn started | off | Sends a message for each durable `turn/start` event |
 | Agent turn ended | on | Sends a message for each durable `turn/end` event and includes its reason |
 | Selected tool calls | off | Sends when a `tool/call` event matches the selected-tool filter |
