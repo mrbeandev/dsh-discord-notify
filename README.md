@@ -54,11 +54,13 @@ The settings accordion exposes:
 | Webhook display name | `DeepSeek Harness` | Sender name shown in Discord |
 | Agent turn started | off | Sends a message for each durable `turn/start` event |
 | Agent turn ended | on | Sends a message for each durable `turn/end` event and includes its reason |
-| Selected tool calls | off | Sends when a `tool/call` event matches the exact-name filter |
-| Tool names | empty | Comma-separated exact names; empty means every tool |
+| Selected tool calls | off | Sends when a `tool/call` event matches the selected-tool filter |
+| Tools to notify | empty | Searchable checklist built from the tools exposed by every healthy agent preset; empty means every tool |
 | Include tool arguments | off | Includes raw tool arguments in selected-tool alerts |
 | Regex-matched bash commands | off | Enables command-specific matching for the `bash` tool |
 | Bash command regular expression | empty | JavaScript regex syntax without `/` delimiters |
+| Send test notification | — | Queues a test through the saved Host-only webhook; unsaved edits must be saved or discarded first |
+| Advanced templates | built-in messages | Per-alert message templates with strict allowed and required variables |
 
 Example bash patterns:
 
@@ -71,6 +73,20 @@ Example bash patterns:
 ```
 
 Invalid, oversized, or potentially catastrophic regular expressions and non-Discord webhook URLs are rejected before settings are saved. Regex matching is limited to the first 16 KiB of a bash command to protect the shared Host event loop.
+
+### Template variables
+
+Each alert type has its own allowed variable set. Templates use `{{variableName}}` placeholders. The Host rejects unknown variables, malformed placeholders, empty templates, and templates missing their required variables.
+
+| Template | Available variables | Required variables |
+| --- | --- | --- |
+| Agent turn started | `sessionId`, `turn` | `sessionId`, `turn` |
+| Agent turn ended | `sessionId`, `turn`, `reason` | `sessionId`, `turn`, `reason` |
+| Selected tool call | `sessionId`, `turn`, `step`, `toolName`, `arguments` | `sessionId`, `toolName` |
+| Matching bash command | `sessionId`, `turn`, `step`, `command` | `sessionId`, `command` |
+| Test notification | `sentAt` | `sentAt` |
+
+Dynamic values are escaped before interpolation. `arguments` and `command` are already formatted as bounded Discord code blocks.
 
 ## Composition configuration
 
@@ -97,7 +113,11 @@ Avoid putting `webhookUrl` in a committed composition. Configure it through the 
 
 The Host plugin observes DSH's canonical post-commit `session/event` feed. This provides exact durable `turn/start`, `turn/end`, and `tool/call` events across active sessions. Notifications are queued in event order and sent without blocking the agent loop.
 
+At startup, the Host resolves every healthy agent preset's standing scope and reads `ctx.tools.schemas(scope)`. The union of those exact callable names becomes the searchable tool checklist in settings. The catalog is Host-managed and cannot be overwritten from the browser.
+
 A bash match is evaluated against `arguments.command` from the `bash` tool's JSON arguments. Bash alerts are independent from the general tool-call filter, so a matching command can be enabled without enabling notifications for every bash invocation.
+
+The test button increments a validated settings nonce. Its Host watcher renders the test template and sends it with the stored webhook secret; the Client never receives that URL.
 
 ## Development
 
