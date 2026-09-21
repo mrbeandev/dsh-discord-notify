@@ -2,6 +2,9 @@
 
 One-way Discord webhook notifications for DeepSeek Harness (DSH).
 
+[![npm version](https://img.shields.io/npm/v/dsh-discord-notify.svg)](https://www.npmjs.com/package/dsh-discord-notify)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 The plugin can notify a Discord channel when:
 
 - an agent turn starts;
@@ -129,6 +132,23 @@ npm run check
 ```
 
 `npm run check` validates syntax, runs tests, and inspects the npm package payload.
+
+## Publishing
+
+Maintainers should publish manually from a clean `main` branch after running the local release gate:
+
+```sh
+npm ci
+npm run check
+npm audit --omit=dev
+npm publish --dry-run --json
+npm whoami
+npm publish
+```
+
+The final command publishes publicly because `package.json` sets `publishConfig.access` to `public`. A dry run does not authenticate or publish.
+
+After publishing, install `dsh-discord-notify` from npm into a clean DSH web profile, restart DSH, and perform a focused settings and webhook smoke test.
 
 ## License
 
