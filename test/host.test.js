@@ -5,7 +5,7 @@ import {
   renderTemplate, sendDiscordWebhook, validateTemplate, validateWebhookUrl,
 } from '../src/index.js'
 
-const session = { id: 'session-123' }
+const session = { id: 'session-123', header: { cwd: '/tmp/e2e' } }
 const base = normalizeConfig({ webhookUrl: 'https://discord.com/api/webhooks/1/token' })
 
 describe('Discord notification matching and templates', () => {
@@ -24,8 +24,8 @@ describe('Discord notification matching and templates', () => {
 
   it('renders custom templates', () => {
     assert.equal(renderTemplate('Turn {{turn}} in {{sessionId}}', { turn: '3', sessionId: 'abc' }), 'Turn 3 in abc')
-    const config = { ...base, notifyTurnStart: true, templates: { ...base.templates, turnStart: 'Started {{sessionId}} #{{turn}}' } }
-    assert.equal(notificationForEvent(session, { type: 'turn/start', data: { turn: 2 } }, config), 'Started session\\-123 #2')
+    const config = { ...base, notifyTurnStart: true, templates: { ...base.templates, turnStart: 'Started {{sessionName}} in {{workspaceName}} ({{sessionId}}) #{{turn}}' } }
+    assert.equal(notificationForEvent(session, { type: 'turn/start', data: { turn: 2 } }, config, null, { sessionName: 'Release work', workspaceName: 'Harness plugins' }), 'Started Release work in Harness plugins (session\\-123) #2')
   })
 
   it('formats turn boundaries and filters tool calls by exact name', () => {
@@ -71,6 +71,8 @@ describe('Discord delivery and Host integration', () => {
     const ctx = {
       agentPresets: { async list() { return [{ id: 'standard' }] }, async standingKeyFor() { return 'standard-scope' } },
       tools: { schemas(scope) { assert.equal(scope, 'standard-scope'); return [{ name: 'bash' }, { name: 'web_search' }] } },
+      sessionTitle: { get() { return { title: 'E2E session' } } },
+      workspaceRegistry: { list() { return [{ title: 'E2E workspace', path: '/tmp/e2e', sessionIds: [session.id] }] } },
       settings: { register(_ns, _schema, options) { registeredBase = options.base; current = normalizeConfig({ ...current, availableTools: options.base.availableTools }); options.validate(current); return { get: () => current, watch(callback) { watcher = callback; return () => {} }, async update(patch) { current = normalizeConfig({ ...current, ...patch }) } } } },
       on(name, callback) { listeners.set(name, callback); return () => listeners.delete(name) },
       effect(callback) { this.cleanup = callback() }, logger: { warn() {} },

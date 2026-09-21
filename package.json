@@ -63,8 +63,10 @@
   "peerDependencies": {
     "@deepseek-ai/dsh-agent-presets": "^0.1.5-rc.2",
     "@deepseek-ai/dsh-client-ui-settings-plugins": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-session-title": "^0.1.5-rc.2",
     "@deepseek-ai/dsh-settings": "^0.1.5-rc.2",
     "@deepseek-ai/dsh-tools": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-workspace": "^0.1.5-rc.2",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
@@ -74,10 +76,16 @@
     "@deepseek-ai/dsh-client-ui-settings-plugins": {
       "optional": true
     },
+    "@deepseek-ai/dsh-session-title": {
+      "optional": true
+    },
     "@deepseek-ai/dsh-settings": {
       "optional": true
     },
     "@deepseek-ai/dsh-tools": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-workspace": {
       "optional": true
     },
     "react": {

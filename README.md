@@ -80,13 +80,13 @@ Each alert type has its own allowed variable set. Templates use `{{variableName}
 
 | Template | Available variables | Required variables |
 | --- | --- | --- |
-| Agent turn started | `sessionId`, `turn` | `sessionId`, `turn` |
-| Agent turn ended | `sessionId`, `turn`, `reason` | `sessionId`, `turn`, `reason` |
-| Selected tool call | `sessionId`, `turn`, `step`, `toolName`, `arguments` | `sessionId`, `toolName` |
-| Matching bash command | `sessionId`, `turn`, `step`, `command` | `sessionId`, `command` |
+| Agent turn started | `sessionId`, `sessionName`, `workspaceName`, `turn` | `sessionId`, `turn` |
+| Agent turn ended | `sessionId`, `sessionName`, `workspaceName`, `turn`, `reason` | `sessionId`, `turn`, `reason` |
+| Selected tool call | `sessionId`, `sessionName`, `workspaceName`, `turn`, `step`, `toolName`, `arguments` | `sessionId`, `toolName` |
+| Matching bash command | `sessionId`, `sessionName`, `workspaceName`, `turn`, `step`, `command` | `sessionId`, `command` |
 | Test notification | `sentAt` | `sentAt` |
 
-Dynamic values are escaped before interpolation. `arguments` and `command` are already formatted as bounded Discord code blocks.
+Dynamic values are escaped before interpolation. `sessionName` comes from DSH's canonical logged session title and falls back to the session ID. `workspaceName` comes from canonical Workspace registry membership and falls back to the session working directory. `arguments` and `command` are already formatted as bounded Discord code blocks.
 
 ## Composition configuration
 

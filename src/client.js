@@ -8,10 +8,10 @@ window.__ModuleLoader__.load({ id: 'dsh-discord-notify', factory: (require) => {
   const e = react.createElement
   const NS = 'dsh-discord-notify'
   const TEMPLATE_SPECS = {
-    turnStart: { label: 'Agent turn started', variables: ['sessionId', 'turn'], required: ['sessionId', 'turn'], fallback: '▶️ **Agent turn started** — session `{{sessionId}}`, turn {{turn}}' },
-    turnEnd: { label: 'Agent turn ended', variables: ['sessionId', 'turn', 'reason'], required: ['sessionId', 'turn', 'reason'], fallback: '⏹️ **Agent turn ended** — session `{{sessionId}}`, turn {{turn}} ({{reason}})' },
-    toolCall: { label: 'Selected tool call', variables: ['sessionId', 'turn', 'step', 'toolName', 'arguments'], required: ['sessionId', 'toolName'], fallback: '🛠️ **Tool called:** `{{toolName}}` — session `{{sessionId}}`{{arguments}}' },
-    bashMatch: { label: 'Matching bash command', variables: ['sessionId', 'turn', 'step', 'command'], required: ['sessionId', 'command'], fallback: '💻 **Matching bash command** — session `{{sessionId}}`\n{{command}}' },
+    turnStart: { label: 'Agent turn started', variables: ['sessionId', 'sessionName', 'workspaceName', 'turn'], required: ['sessionId', 'turn'], fallback: '▶️ **Agent turn started** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`), turn {{turn}}' },
+    turnEnd: { label: 'Agent turn ended', variables: ['sessionId', 'sessionName', 'workspaceName', 'turn', 'reason'], required: ['sessionId', 'turn', 'reason'], fallback: '⏹️ **Agent turn ended** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`), turn {{turn}} ({{reason}})' },
+    toolCall: { label: 'Selected tool call', variables: ['sessionId', 'sessionName', 'workspaceName', 'turn', 'step', 'toolName', 'arguments'], required: ['sessionId', 'toolName'], fallback: '🛠️ **Tool called:** `{{toolName}}` — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`){{arguments}}' },
+    bashMatch: { label: 'Matching bash command', variables: ['sessionId', 'sessionName', 'workspaceName', 'turn', 'step', 'command'], required: ['sessionId', 'command'], fallback: '💻 **Matching bash command** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`)\n{{command}}' },
     test: { label: 'Test notification', variables: ['sentAt'], required: ['sentAt'], fallback: '✅ **Discord notifications are working**\nTest sent from DeepSeek Harness at {{sentAt}}.' },
   }
   const FIELDS = ['webhookUrl', 'notifyTurnStart', 'notifyTurnEnd', 'notifyToolCalls', 'toolNames', 'notifyBashMatches', 'bashRegex', 'includeToolArguments', 'username', 'templates', 'testNonce']
@@ -32,6 +32,7 @@ window.__ModuleLoader__.load({ id: 'dsh-discord-notify', factory: (require) => {
   const button = { appearance: 'none', font: 'inherit', cursor: 'pointer', border: '1px solid transparent', borderRadius: 8, padding: '5px 14px', fontSize: 13 }
   const secondary = { ...button, borderColor: 'var(--dsw-alias-border-l2)', color: 'var(--dsw-alias-label-secondary)', background: 'none' }
   const primary = { ...button, background: 'var(--dsw-alias-brand-primary)', color: 'var(--dsw-alias-label-on-brand, #fff)' }
+  const primaryDisabled = { ...primary, cursor: 'not-allowed', background: 'var(--dsw-alias-interactive-bg-disabled, var(--dsw-alias-bg-layer-2))', color: 'var(--dsw-alias-label-disabled, var(--dsw-alias-label-tertiary))', borderColor: 'var(--dsw-alias-border-l2)', opacity: 1 }
   const errorStyle = { color: 'var(--dsw-alias-label-error)', flex: '1 1 100%', margin: 0, fontSize: 12 }
   const successStyle = { color: 'var(--dsw-alias-label-success, #39a869)', flex: '1 1 100%', margin: 0, fontSize: 12 }
   const badge = { whiteSpace: 'nowrap', background: 'var(--dsw-alias-bg-module-platform)', color: 'var(--dsw-alias-label-secondary)', borderRadius: 999, padding: '1px 8px', fontSize: 11 }
@@ -104,7 +105,7 @@ window.__ModuleLoader__.load({ id: 'dsh-discord-notify', factory: (require) => {
           e('button', { type: 'button', style: secondary, disabled: dirty || saving || testing || !snapshot.writable, onClick: () => { void test() } }, testing ? 'Sending test…' : 'Send test notification'),
           e('button', { type: 'button', style: secondary, disabled: saving || testing || !snapshot.writable, onClick: () => { void reset() } }, 'Restore defaults'),
           e('button', { type: 'button', style: secondary, disabled: !dirty || saving, onClick: () => { load(base, revision); setDirty(false); setFailed(''); setSuccess('') } }, 'Discard changes'),
-          e('button', { type: 'button', style: primary, disabled: !dirty || saving || !snapshot.writable, onClick: () => { void save() } }, saving ? 'Saving…' : 'Save')))
+          e('button', { type: 'button', style: (!dirty || saving || !snapshot.writable) ? primaryDisabled : primary, disabled: !dirty || saving || !snapshot.writable, onClick: () => { void save() } }, saving ? 'Saving…' : 'Save')))
       : null)
   }
 

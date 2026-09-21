@@ -3,32 +3,32 @@ import safeRegex from 'safe-regex2'
 
 export const name = 'discord-notify'
 export const SETTINGS_NAMESPACE = 'dsh-discord-notify'
-export const inject = ['settings', 'tools', 'agentPresets']
+export const inject = ['settings', 'tools', 'agentPresets', 'sessionTitle', 'workspaceRegistry']
 
 export const TEMPLATE_SPECS = Object.freeze({
   turnStart: Object.freeze({
     label: 'Agent turn started',
-    allowed: Object.freeze(['sessionId', 'turn']),
+    allowed: Object.freeze(['sessionId', 'sessionName', 'workspaceName', 'turn']),
     required: Object.freeze(['sessionId', 'turn']),
-    default: '▶️ **Agent turn started** — session `{{sessionId}}`, turn {{turn}}',
+    default: '▶️ **Agent turn started** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`), turn {{turn}}',
   }),
   turnEnd: Object.freeze({
     label: 'Agent turn ended',
-    allowed: Object.freeze(['sessionId', 'turn', 'reason']),
+    allowed: Object.freeze(['sessionId', 'sessionName', 'workspaceName', 'turn', 'reason']),
     required: Object.freeze(['sessionId', 'turn', 'reason']),
-    default: '⏹️ **Agent turn ended** — session `{{sessionId}}`, turn {{turn}} ({{reason}})',
+    default: '⏹️ **Agent turn ended** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`), turn {{turn}} ({{reason}})',
   }),
   toolCall: Object.freeze({
     label: 'Selected tool call',
-    allowed: Object.freeze(['sessionId', 'turn', 'step', 'toolName', 'arguments']),
+    allowed: Object.freeze(['sessionId', 'sessionName', 'workspaceName', 'turn', 'step', 'toolName', 'arguments']),
     required: Object.freeze(['sessionId', 'toolName']),
-    default: '🛠️ **Tool called:** `{{toolName}}` — session `{{sessionId}}`{{arguments}}',
+    default: '🛠️ **Tool called:** `{{toolName}}` — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`){{arguments}}',
   }),
   bashMatch: Object.freeze({
     label: 'Matching bash command',
-    allowed: Object.freeze(['sessionId', 'turn', 'step', 'command']),
+    allowed: Object.freeze(['sessionId', 'sessionName', 'workspaceName', 'turn', 'step', 'command']),
     required: Object.freeze(['sessionId', 'command']),
-    default: '💻 **Matching bash command** — session `{{sessionId}}`\n{{command}}',
+    default: '💻 **Matching bash command** — **{{sessionName}}** in **{{workspaceName}}** (`{{sessionId}}`)\n{{command}}',
   }),
   test: Object.freeze({
     label: 'Test notification',
@@ -133,8 +133,13 @@ export function renderTemplate(template, values) {
 function parseToolArguments(raw) { try { const parsed = JSON.parse(raw); return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined } catch { return undefined } }
 export function bashCommandFromEvent(event) { const args = event?.type === 'tool/call' && event.data?.name === 'bash' ? parseToolArguments(event.data.arguments) : undefined; return typeof args?.command === 'string' ? args.command : undefined }
 
-export function notificationForEvent(session, event, config, bashRegex = compileBashRegex(config.bashRegex)) {
-  const data = event?.data || {}; const common = { sessionId: safeValue(session?.id || 'unknown'), turn: safeValue(data.turn), step: safeValue(data.step) }
+export function notificationForEvent(session, event, config, bashRegex = compileBashRegex(config.bashRegex), metadata = {}) {
+  const data = event?.data || {}; const common = {
+    sessionId: safeValue(session?.id || 'unknown'),
+    sessionName: safeValue(metadata.sessionName || session?.id || 'Unnamed session'),
+    workspaceName: safeValue(metadata.workspaceName || 'Unassigned workspace'),
+    turn: safeValue(data.turn), step: safeValue(data.step),
+  }
   if (event?.type === 'turn/start' && config.notifyTurnStart) return renderTemplate(config.templates.turnStart, common)
   if (event?.type === 'turn/end' && config.notifyTurnEnd) return renderTemplate(config.templates.turnEnd, { ...common, reason: safeValue(data.reason?.kind || 'unknown') })
   if (event?.type !== 'tool/call') return undefined
@@ -151,6 +156,16 @@ export async function sendDiscordWebhook(webhookUrl, username, content, options 
   const timeout = AbortSignal.timeout(10_000); const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout
   const response = await fetchImpl(webhookUrl, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, content: truncate(content, 2000), allowed_mentions: { parse: [] } }), signal })
   if (!response.ok) { const body = typeof response.text === 'function' ? await response.text().catch(() => '') : ''; throw new Error(`Discord webhook returned HTTP ${response.status}${body ? `: ${truncate(body, 200)}` : ''}`) }
+}
+
+function notificationMetadata(ctx, session) {
+  const title = ctx.sessionTitle.get(session)?.title
+  const workspace = ctx.workspaceRegistry.list().find((candidate) => candidate.sessionIds.includes(session.id))
+    ?? ctx.workspaceRegistry.list().find((candidate) => candidate.path === session.header.cwd)
+  return {
+    sessionName: title || String(session.id),
+    workspaceName: workspace?.title || session.header.cwd || 'Unassigned workspace',
+  }
 }
 
 async function availableToolNames(ctx) {
@@ -191,6 +206,6 @@ export async function apply(ctx, config = {}) {
       await scope.update({ availableTools: catalog })
     }).catch((error) => ctx.logger?.warn?.(`discord-notify: tool catalog refresh failed: ${error?.message || error}`))
   })
-  const disposeEvent = ctx.on('session/event', (session, event) => { if (!alive || !live.webhookUrl) return; const content = notificationForEvent(session, event, live, bashRegex); if (content) enqueue(live.webhookUrl, live.username, content) })
+  const disposeEvent = ctx.on('session/event', (session, event) => { if (!alive || !live.webhookUrl) return; const content = notificationForEvent(session, event, live, bashRegex, notificationMetadata(ctx, session)); if (content) enqueue(live.webhookUrl, live.username, content) })
   ctx.effect(() => async () => { alive = false; lifetime.abort(); unwatch(); disposeToolsChange(); disposeEvent(); await catalogRefresh; return queue }, 'discord-notify: session event delivery')
 }
