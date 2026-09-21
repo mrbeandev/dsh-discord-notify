@@ -14,7 +14,6 @@
   },
   "files": [
     "src",
-    "test",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
@@ -62,15 +61,23 @@
     "safe-regex2": "^5.1.1"
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh-client-ui-settings-plugins": "*",
-    "@deepseek-ai/dsh-settings": "*",
+    "@deepseek-ai/dsh-agent-presets": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-client-ui-settings-plugins": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-settings": "^0.1.5-rc.2",
+    "@deepseek-ai/dsh-tools": "^0.1.5-rc.2",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-agent-presets": {
+      "optional": true
+    },
     "@deepseek-ai/dsh-client-ui-settings-plugins": {
       "optional": true
     },
     "@deepseek-ai/dsh-settings": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
       "optional": true
     },
     "react": {

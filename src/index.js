@@ -122,7 +122,6 @@ function validateConfig(value, catalog) {
   if (value.username.trim() === '') throw new TypeError('Webhook display name cannot be empty')
   if (value.testNonce > 0 && !value.webhookUrl) throw new TypeError('Configure a Discord webhook URL before sending a test notification')
   for (const [key, template] of Object.entries(value.templates)) validateTemplate(key, template)
-  if (catalog && (value.availableTools.length !== catalog.length || value.availableTools.some((tool, index) => tool !== catalog[index]))) throw new TypeError('Available tool catalog is Host-managed')
 }
 
 function truncate(value, limit) { const text = String(value); return text.length <= limit ? text : `${text.slice(0, Math.max(0, limit - 1))}…` }
@@ -165,7 +164,7 @@ async function availableToolNames(ctx) {
 }
 
 export async function apply(ctx, config = {}) {
-  const catalog = await availableToolNames(ctx)
+  let catalog = await availableToolNames(ctx)
   let live = normalizeConfig({ ...config, availableTools: catalog }, catalog); validateConfig(live, catalog)
   let bashRegex = compileBashRegex(live.bashRegex); let alive = true; let queued = 0; let queue = Promise.resolve(); const lifetime = new AbortController()
   const enqueue = (target, username, content) => {
@@ -175,11 +174,23 @@ export async function apply(ctx, config = {}) {
   }
   const scope = ctx.settings.register(SETTINGS_NAMESPACE, Config, { base: { ...config, availableTools: catalog }, validate(value) { validateConfig(normalizeConfig(value, catalog), catalog) } })
   live = normalizeConfig(scope.get(), catalog); bashRegex = compileBashRegex(live.bashRegex)
-  const unwatch = scope.watch((next, prev) => {
+  const unwatch = scope.watch(async (next, prev) => {
     live = normalizeConfig(next, catalog); bashRegex = compileBashRegex(live.bashRegex)
     const previousNonce = normalizeConfig(prev, catalog).testNonce
-    if (live.testNonce > previousNonce && live.webhookUrl) enqueue(live.webhookUrl, live.username, renderTemplate(live.templates.test, { sentAt: safeValue(new Date().toISOString()) }))
+    if (live.testNonce > previousNonce && live.webhookUrl) {
+      enqueue(live.webhookUrl, live.username, renderTemplate(live.templates.test, { sentAt: safeValue(new Date().toISOString()) }))
+      await scope.update({ testNonce: 0 })
+    }
+  })
+  let catalogRefresh = Promise.resolve()
+  const disposeToolsChange = ctx.on('tools/change', () => {
+    catalogRefresh = catalogRefresh.then(async () => {
+      const nextCatalog = await availableToolNames(ctx)
+      if (nextCatalog.length === catalog.length && nextCatalog.every((name, index) => name === catalog[index])) return
+      catalog = nextCatalog
+      await scope.update({ availableTools: catalog })
+    }).catch((error) => ctx.logger?.warn?.(`discord-notify: tool catalog refresh failed: ${error?.message || error}`))
   })
   const disposeEvent = ctx.on('session/event', (session, event) => { if (!alive || !live.webhookUrl) return; const content = notificationForEvent(session, event, live, bashRegex); if (content) enqueue(live.webhookUrl, live.username, content) })
-  ctx.effect(() => () => { alive = false; lifetime.abort(); unwatch(); disposeEvent(); return queue }, 'discord-notify: session event delivery')
+  ctx.effect(() => async () => { alive = false; lifetime.abort(); unwatch(); disposeToolsChange(); disposeEvent(); await catalogRefresh; return queue }, 'discord-notify: session event delivery')
 }

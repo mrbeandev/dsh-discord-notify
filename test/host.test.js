@@ -71,7 +71,7 @@ describe('Discord delivery and Host integration', () => {
     const ctx = {
       agentPresets: { async list() { return [{ id: 'standard' }] }, async standingKeyFor() { return 'standard-scope' } },
       tools: { schemas(scope) { assert.equal(scope, 'standard-scope'); return [{ name: 'bash' }, { name: 'web_search' }] } },
-      settings: { register(_ns, _schema, options) { registeredBase = options.base; current = normalizeConfig({ ...current, availableTools: options.base.availableTools }); options.validate(current); return { get: () => current, watch(callback) { watcher = callback; return () => {} } } } },
+      settings: { register(_ns, _schema, options) { registeredBase = options.base; current = normalizeConfig({ ...current, availableTools: options.base.availableTools }); options.validate(current); return { get: () => current, watch(callback) { watcher = callback; return () => {} }, async update(patch) { current = normalizeConfig({ ...current, ...patch }) } } } },
       on(name, callback) { listeners.set(name, callback); return () => listeners.delete(name) },
       effect(callback) { this.cleanup = callback() }, logger: { warn() {} },
     }

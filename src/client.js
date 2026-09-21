@@ -42,7 +42,8 @@ window.__ModuleLoader__.load({ id: 'dsh-discord-notify', factory: (require) => {
 
   function ToolSelector({ tools, selected, disabled, onChange }) {
     const [query, setQuery] = useState('')
-    const filtered = useMemo(() => tools.filter((name) => name.toLowerCase().includes(query.trim().toLowerCase())), [tools, query])
+    const choices = useMemo(() => [...new Set([...tools, ...selected])].sort(), [tools, selected])
+    const filtered = useMemo(() => choices.filter((name) => name.toLowerCase().includes(query.trim().toLowerCase())), [choices, query])
     const toggle = (name) => onChange(selected.includes(name) ? selected.filter((item) => item !== name) : [...selected, name].sort())
     return e('div', { style: field },
       e('label', { htmlFor: 'discord-notify-tool-search', style: label }, 'Tools to notify'),
@@ -50,7 +51,7 @@ window.__ModuleLoader__.load({ id: 'dsh-discord-notify', factory: (require) => {
       e('div', { role: 'group', 'aria-label': 'Available tools', style: { border: '1px solid var(--dsw-alias-border-l2)', borderRadius: 8, maxHeight: 220, overflow: 'auto', padding: 6 } },
         tools.length === 0 ? e('p', { style: { ...hint, padding: 8 } }, 'No tools were reported by the current agent presets.') : null,
         filtered.map((name) => e('label', { key: name, style: { ...row, justifyContent: 'flex-start', cursor: disabled ? 'default' : 'pointer', padding: '6px 8px', borderRadius: 6 } },
-          e('input', { type: 'checkbox', checked: selected.includes(name), disabled, onChange: () => toggle(name) }), e('code', null, name)))),
+          e('input', { type: 'checkbox', checked: selected.includes(name), disabled, onChange: () => toggle(name) }), e('code', null, name), !tools.includes(name) ? e('span', { style: badge }, 'Unavailable') : null))),
       e('p', { style: hint }, selected.length === 0 ? 'No selection means every tool call matches.' : `${selected.length} tool${selected.length === 1 ? '' : 's'} selected.`))
   }
 

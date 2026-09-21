@@ -113,7 +113,7 @@ Avoid putting `webhookUrl` in a committed composition. Configure it through the 
 
 The Host plugin observes DSH's canonical post-commit `session/event` feed. This provides exact durable `turn/start`, `turn/end`, and `tool/call` events across active sessions. Notifications are queued in event order and sent without blocking the agent loop.
 
-At startup, the Host resolves every healthy agent preset's standing scope and reads `ctx.tools.schemas(scope)`. The union of those exact callable names becomes the searchable tool checklist in settings. The catalog is Host-managed and cannot be overwritten from the browser.
+The Host resolves every healthy agent preset's standing scope and reads `ctx.tools.schemas(scope)`. The union of those exact callable names becomes the searchable tool checklist in settings and refreshes on DSH `tools/change` events. A selected tool that later disappears remains visible as **Unavailable** so it can be removed.
 
 A bash match is evaluated against `arguments.command` from the `bash` tool's JSON arguments. Bash alerts are independent from the general tool-call filter, so a matching command can be enabled without enabling notifications for every bash invocation.
 
